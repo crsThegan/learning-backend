@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -12,7 +13,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-const secret = "secret-key"
 const tokenDuration = 3600 * time.Second
 const invalJtiCleanRate = 1 * time.Hour
 
@@ -32,6 +32,10 @@ type User struct {
 type UserClaims struct {
 	User
 	jwt.RegisteredClaims
+}
+
+func secret() string {
+	return os.Getenv("SECRET")
 }
 
 func getJWTBasicTemplate(sub, jti string) jwt.RegisteredClaims {
@@ -58,7 +62,7 @@ func Require(role string) func(c *gin.Context) {
 		receivedStr := strings.TrimPrefix(h, "Bearer ")
 		received, err := jwt.ParseWithClaims(receivedStr, &UserClaims{},
 			func(token *jwt.Token) (any, error) {
-				return []byte(secret), nil
+				return []byte(secret()), nil
 			}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
 		if err != nil || !received.Valid {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
@@ -99,7 +103,7 @@ func GetToken(user User) (string, error) {
 			fmt.Sprintf("%s-%d", user.Login, state.NTokens)),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	ts, err := token.SignedString([]byte(secret))
+	ts, err := token.SignedString([]byte(secret()))
 	state.NTokens++
 	return ts, err
 }
@@ -107,7 +111,7 @@ func GetToken(user User) (string, error) {
 func InvalidateToken(validTokenStr string) error {
 	token, err := jwt.ParseWithClaims(validTokenStr, &UserClaims{},
 		func(token *jwt.Token) (any, error) {
-			return []byte(secret), nil
+			return []byte(secret()), nil
 		}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
 	if err != nil {
 		return errors.New("invalid token: " + err.Error())

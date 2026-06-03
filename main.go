@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"goproj/auth"
+	"goproj/config"
+	"log"
 	"net/http"
 	"slices"
 	"strconv"
@@ -203,6 +205,10 @@ func fillValues(data ...int) {
 }
 
 func main() {
+	if err := config.Load(); err != nil {
+		log.Fatalln("Config error:", err)
+	}
+
 	values = make([]Value, 0)
 	fillValues(43, 56, 23, 41, 78, 53)
 
