@@ -3,6 +3,7 @@ package auth
 import (
 	"errors"
 	"fmt"
+	"goproj/internal/models"
 	"net/http"
 	"os"
 	"strings"
@@ -24,13 +25,8 @@ var state struct {
 	NTokens  int
 }
 
-type User struct {
-	Login string `json:"login" binding:"required"`
-	Role  string `json:"role" binding:"required"`
-}
-
 type UserClaims struct {
-	User
+	models.User
 	jwt.RegisteredClaims
 }
 
@@ -93,7 +89,7 @@ func Require(role string) func(c *gin.Context) {
 	}
 }
 
-func GetToken(user User) (string, error) {
+func GetToken(user models.User) (string, error) {
 	state.Lock()
 	defer state.Unlock()
 
