@@ -17,12 +17,12 @@ type ValueHandler struct {
 }
 
 type valueResponse struct {
-	ID int `json:"user_id" binding:"required"`
+	ID int `json:"id" binding:"required"`
 	models.Value
 }
 
 type valueRequest struct {
-	valueResponse
+	models.Value
 }
 
 func (h *ValueHandler) Get(c *gin.Context) {
@@ -112,10 +112,10 @@ func (h *ValueHandler) Set(c *gin.Context) {
 		 SET data = $1
 		 WHERE id = $2
 		 RETURNING *`,
-		req.Data, req.ID).Scan(&response.ID, &response.Data)
+		req.Data, id).Scan(&response.ID, &response.Data)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
-			"error": fmt.Sprintf("value with id %d not found", req.ID),
+			"error": fmt.Sprintf("value with id %d not found", id),
 		})
 		return
 	}
@@ -126,9 +126,7 @@ func (h *ValueHandler) Set(c *gin.Context) {
 }
 
 func (h *ValueHandler) Append(c *gin.Context) {
-	var req struct {
-		Data int `json:"data"`
-	}
+	var req valueRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "wrong request data format",
